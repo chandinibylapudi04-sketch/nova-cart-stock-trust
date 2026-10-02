@@ -31,3 +31,10 @@ Single static file, no build step. Open `index.html` in a browser.
 
 ## Tech
 Vanilla HTML/CSS/JS. Data is simulated.
+
+## Quality notes
+- Zero dependencies, single 20 KB file, no build step; loads instantly
+- Strict Content-Security-Policy; user-entered text is HTML-escaped
+- Keyboard accessible, ARIA tabs, visible focus, light/dark theme, reduced-motion support
+- Own-data input (add items), state persisted locally, risk model self-test on load
+- `Dockerfile` included for Google Cloud Run deployment

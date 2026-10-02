@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>NOVA CART · Stock Trust</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:"><meta name="description" content="Stock Trust: availability-confidence engine for NOVA CART"><title>NOVA CART · Stock Trust</title>
 <style>
 :root{--bg:#faf8f4;--card:#fff;--ink:#1d1b18;--mut:#6b665e;--line:#e4dfd5;--acc:#0f6b4f;--accbg:#e2f3ec;--warn:#b45309;--warnbg:#fdf0dc;--bad:#b3261e;--badbg:#fbe4e2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15140f;--card:#1f1d17;--ink:#f1ede4;--mut:#a39d90;--line:#37342b;--acc:#4cc79a;--accbg:#12302a;--warn:#f0b35c;--warnbg:#3a2c12;--bad:#f2928b;--badbg:#3b1b18}}
@@ -29,11 +29,15 @@ input[type=range]{width:100%;accent-color:var(--acc)}
 .sl{margin:10px 0}.sl label{display:flex;justify-content:space-between;font-size:14px}
 .tbl{overflow-x:auto}.big{font:700 30px Georgia,serif;color:var(--acc)}
 .note{border-left:3px solid var(--acc);padding:4px 12px;color:var(--mut);margin:10px 0}
+button:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.sr{position:absolute;left:-9999px}input[type=text],input[type=number]{border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:6px 10px;border-radius:8px;font:inherit;min-width:0}
+table{width:100%;border-collapse:collapse}th,td{padding:6px 8px;border-top:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style></head><body><main>
 <h1>NOVA CART · Stock Trust</h1>
 <p class="sub">Making "available" mean available — so customers come back and stores stay.</p>
-<nav id="nav"></nav>
-<section id="v"></section>
+<nav id="nav" role="tablist" aria-label="Sections"></nav>
+<section id="v" tabindex="-1" style="outline:none"></section>
 </main>
 <script>
 const $=s=>document.querySelector(s);
@@ -52,10 +56,18 @@ let items=[
 {n:"Filter Coffee 250g",c:"Grocery",stock:30,vel:7,hrs:3,alt:"Instant Coffee 100g",p:210},
 {n:"Cough Syrup 100ml",c:"Pharmacy",stock:12,vel:5,hrs:60,alt:"Cough Lozenges",p:98}];
 let cart=new Set(),flags=new Set(),log=[],tab="d";
-const tabs={d:"1 · Diagnosis",s:"2 · Store Console",c:"3 · Customer App",i:"4 · Impact"};
-function nav(){$("#nav").innerHTML=Object.entries(tabs).map(([k,t])=>`<button class="${k==tab?"on":""}" onclick="tab='${k}';render()">${t}</button>`).join("")}
+const tabs={d:"1 · Diagnosis",s:"2 · Store Console",c:"3 · Customer App",i:"4 · Impact",p:"5 · Prompt Journey"};
+function nav(){$("#nav").innerHTML=Object.entries(tabs).map(([k,t])=>`<button class="${k==tab?"on":""}" role="tab" aria-selected="${k==tab}" onclick="tab='${k}';render()">${t}</button>`).join("")}
 function conf(){const w=items.reduce((a,i)=>a+i.vel,0);return 1-items.reduce((a,i)=>a+risk(i)*i.vel,0)/w}
-function render(){nav();$("#v").innerHTML={d:diag,s:store,c:cust,i:impact}[tab]();if(tab=="i")calc()}
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const save=()=>{try{localStorage.setItem("nc",JSON.stringify(items))}catch(e){}};
+const GQ=[["Revenue after promo (₹L)",21.8-9.5,26.1-17,1],["Promo spend per order (₹)",9.5e5/31200,17e5/38500,0],["Cancelled orders / month",31200*.06,38500*.11,0],["Support tickets per 100 orders",3100/312,5900/385,1]];
+function render(){save();nav();$("#v").innerHTML={d:diag,s:store,c:cust,i:impact,p:journey}[tab]();if(tab=="i")calc();$("#v").focus()}
+function addItem(){const n=$("#an").value.trim(),st=+$("#as").value,v=+$("#av").value;if(!n||!(st>=0)||!(v>0)){alert("Enter a name, stock (0 or more) and units sold per day (above 0).");return}
+items.push({n:esc(n.slice(0,40)),c:"Custom",stock:st,vel:v,hrs:0,alt:"Similar item",p:100});log.push("Added "+esc(n.slice(0,40)));render()}
+function resetAll(){try{localStorage.removeItem("nc")}catch(e){}location.reload()}
+function journey(){const J=[["Which executive claims are symptoms and which are causes? Test each against the data.","All six views trace back to one cause: the app promises stock stores can't confirm."],["Quantify what unavailable stock costs: cancellations, tickets, churn.","35% of 11% cancellations ≈ 1,480 orders/month; missing/refund issues = 48% of tickets."],["Why would customers who rated us 4★+ stop ordering?","Quiet churn from broken promises, not dissatisfaction; focus on getting customers to order 2 and 3 (72% repeat after 3)."],["Design a fix for stores under ₹25L with no new staff or hardware.","Risk-ranked 'confirm' list with one-tap replies instead of full catalogue upkeep."],["Stress-test: how could this fail, and how do we prove it?","Estimates are scenarios; validate with a 4-week test-vs-control pilot."]];
+return `<h2>Prompt Journey</h2><p class="sub">Key prompts that shaped the diagnosis and product (edit to match your own).</p>${J.map((j,k)=>`<div class="card"><b>${k+1}. “${j[0]}”</b><div class="note">${j[1]}</div></div>`).join("")}`}
 
 function diag(){return `
 <div class="card"><b>The diagnosis:</b> NOVA CART is growing volume but losing trust. Orders rose 23% in six months while repeat purchase fell 41% → 27%, and promo spend nearly doubled. The common root cause across customers, stores and support is <b>unreliable availability</b>: the app promises stock that stores can't confirm.</div>
@@ -66,6 +78,9 @@ function diag(){return `
 <div class="card stat"><b>61%</b><span>of churned customers had rated us 4★+ — they didn't hate us; the experience just failed quietly</span></div>
 <div class="card stat"><b>72%</b><span>repeat probability after 3 orders — but only 31% make a 2nd order</span></div>
 <div class="card stat"><b>44%</b><span>of coupons never redeemed; discount-acquired users retain worse</span></div></div>
+<h2>Growth quality check (computed from the case)</h2>
+<div class="card tbl"><table><caption class="sr">Growth quality, six months ago vs now</caption><tr><th scope="col">Metric</th><th scope="col">6 mo ago</th><th scope="col">Now</th><th scope="col">Change</th></tr>${GQ.map(r=>`<tr><td>${r[0]}</td><td>${r[1].toFixed(r[3])}</td><td>${r[2].toFixed(r[3])}</td><td><span class="pill hi">${r[2]>r[1]?"+":""}${Math.round((r[2]/r[1]-1)*100)}%</span></td></tr>`).join("")}</table></div>
+<div class="note">Revenue is up 20%, but revenue <i>after promo</i> fell about 26%. Growth is being bought, not earned.</div>
 <h2>Why this, not the other five priorities</h2>
 <div class="card">Delivery speed (Ops) is a battle against bigger rivals we can't win with ₹25L. Acquisition (Marketing) pours users into a leaky funnel. Availability is the one problem that hits all three: it drives cancellations, support tickets (refunds + missing items = 48% of tickets), store frustration, and the 2nd-order drop. And it's NOVA CART's chance to differentiate: trustworthy long-tail local inventory big platforms don't carry.</div>
 <div class="note">Product: <b>Stock Trust</b>: a per-item confidence score (from time since last update × sales velocity), a 10-second "confirm stock" console for stores, and availability-aware ordering for customers. No warehouses, no hires, no new hardware.</div>
@@ -81,6 +96,7 @@ return `<h2>Store Console · Sharma General &amp; Pharmacy</h2>
 <div class="card">${sorted.map(i=>{const r=risk(i),[k,t]=tier(r),ix=items.indexOf(i);return `<div class="row"><div class="grow"><b>${i.n}</b> ${flags.has(ix)?'<span class="pill hi">Customer waiting</span>':""}<div class="mut">${i.c} · updated ${i.hrs}h ago · ~${i.vel}/day · last count ${i.stock}</div></div>
 <div style="width:110px"><span class="pill ${k}">${t}</span><div class="bar"><i style="width:${r*100}%;background:var(--${k=="ok"?"acc":k=="mid"?"warn":"bad"})"></i></div></div>
 <button class="b" onclick="setS(${ix},true)">In stock</button><button class="b" onclick="setS(${ix},false)">Out</button></div>`}).join("")}</div>
+<div class="card"><b>Add an item (your own data in, risk score out)</b><div class="row"><input id="an" type="text" maxlength="40" placeholder="Item name" aria-label="Item name"><input id="as" type="number" min="0" placeholder="Stock" aria-label="Units in stock" style="width:90px"><input id="av" type="number" min="1" placeholder="Sold/day" aria-label="Units sold per day" style="width:100px"><button class="b p" onclick="addItem()">Add</button><button class="b" onclick="resetAll()">Reset demo</button></div></div>
 ${log.length?`<div class="mut">${log.slice(-4).reverse().join("<br>")}</div>`:""}`}
 function adv(h){items.forEach(i=>i.hrs+=h);render()}
 function setS(ix,inStock){const i=items[ix];i.hrs=0;if(!inStock)i.stock=0;else if(i.stock<5)i.stock=20;flags.delete(ix);log.push(`${new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})} · ${i.n} marked ${inStock?"in stock":"OUT"} (1 tap)`);render()}
@@ -113,5 +129,7 @@ const m=(rec+rep)*678,sav=tk*60+promo,tot=m+sav,cost=v("e")*1e5;
 $("#oa").textContent=v("a")+"%";$("#ob").textContent="+"+v("b")+" pp";$("#oc").textContent=v("c")+"%";$("#od").textContent=v("d")+"%";$("#oe").textContent="₹"+v("e")+"L";
 const c=(b,s)=>`<div class="card stat"><b>${b}</b><span>${s}</span></div>`;
 $("#out").innerHTML=c(Math.round(rec).toLocaleString("en-IN"),"orders recovered / month")+c(Math.round(rep).toLocaleString("en-IN"),"extra repeat orders / month")+c(L(m),"added revenue / month")+c(L(sav),"cost savings / month (support + promo)")+c(L(tot),"total monthly benefit")+c(tot>0?(cost/tot).toFixed(1)+" mo":"–","payback on ₹"+v("e")+"L build")+c(L(tot*6-cost),"net gain over 6 months (before ramp-up)");}
+try{const z=JSON.parse(localStorage.getItem("nc"));if(Array.isArray(z)&&z.length&&z.every(x=>x&&typeof x.n=="string"&&isFinite(x.stock)&&isFinite(x.vel)&&isFinite(x.hrs)))items=z}catch(e){}
+console.assert(risk({stock:10,vel:10,hrs:0})===0&&risk({stock:10,vel:10,hrs:48})>risk({stock:10,vel:10,hrs:24}),"risk model self-test");
 render();
 </script></body></html>
