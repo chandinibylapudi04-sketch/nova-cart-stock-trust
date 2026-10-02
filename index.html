@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NOVA CART · Stock Trust</title>
+<style>
+:root{--bg:#faf8f4;--card:#fff;--ink:#1d1b18;--mut:#6b665e;--line:#e4dfd5;--acc:#0f6b4f;--accbg:#e2f3ec;--warn:#b45309;--warnbg:#fdf0dc;--bad:#b3261e;--badbg:#fbe4e2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15140f;--card:#1f1d17;--ink:#f1ede4;--mut:#a39d90;--line:#37342b;--acc:#4cc79a;--accbg:#12302a;--warn:#f0b35c;--warnbg:#3a2c12;--bad:#f2928b;--badbg:#3b1b18}}
+:root[data-theme="dark"]{--bg:#15140f;--card:#1f1d17;--ink:#f1ede4;--mut:#a39d90;--line:#37342b;--acc:#4cc79a;--accbg:#12302a;--warn:#f0b35c;--warnbg:#3a2c12;--bad:#f2928b;--badbg:#3b1b18}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:880px;margin:0 auto;padding:16px}
+h1{font:700 22px/1.2 Georgia,serif;margin:4px 0}h2{font:700 18px Georgia,serif;margin:20px 0 8px}
+.sub{color:var(--mut);margin:0 0 12px}
+nav{display:flex;gap:6px;overflow-x:auto;margin:12px 0}
+nav button{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:99px;font:inherit;cursor:pointer}
+nav button.on{background:var(--acc);color:var(--bg);border-color:var(--acc);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.stat b{display:block;font:700 26px Georgia,serif}.stat span{color:var(--mut);font-size:13px}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600}
+.ok{background:var(--accbg);color:var(--acc)}.mid{background:var(--warnbg);color:var(--warn)}.hi{background:var(--badbg);color:var(--bad)}
+.row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.row:first-child{border-top:0}.grow{flex:1;min-width:150px}.mut{color:var(--mut);font-size:13px}
+button.b{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 12px;border-radius:8px;font:inherit;cursor:pointer}
+button.p{background:var(--acc);color:var(--bg);border-color:var(--acc);font-weight:600}
+.bar{height:6px;border-radius:4px;background:var(--line);overflow:hidden;min-width:80px}.bar i{display:block;height:100%}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.sl{margin:10px 0}.sl label{display:flex;justify-content:space-between;font-size:14px}
+.tbl{overflow-x:auto}.big{font:700 30px Georgia,serif;color:var(--acc)}
+.note{border-left:3px solid var(--acc);padding:4px 12px;color:var(--mut);margin:10px 0}
+</style></head><body><main>
+<h1>NOVA CART · Stock Trust</h1>
+<p class="sub">Making "available" mean available — so customers come back and stores stay.</p>
+<nav id="nav"></nav>
+<section id="v"></section>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const L=n=>"₹"+(n/1e5).toFixed(1)+"L";
+const risk=i=>1-Math.exp(-(i.vel/24*i.hrs)/Math.max(i.stock,1));
+const tier=r=>r<.25?["ok","Likely in stock"]:r<.5?["mid","Needs check"]:["hi","Risky"];
+let items=[
+{n:"Amul Butter 500g",c:"Dairy",stock:30,vel:20,hrs:30,alt:"Nandini Butter 500g",p:285},
+{n:"Whole Wheat Bread",c:"Bakery",stock:40,vel:25,hrs:20,alt:"Multigrain Bread",p:48},
+{n:"Paracetamol 650mg",c:"Pharmacy",stock:60,vel:8,hrs:50,alt:"Dolo 650 strip",p:32},
+{n:"A4 Notebook 200pg",c:"Stationery",stock:40,vel:6,hrs:70,alt:"A4 Notebook 120pg",p:90},
+{n:"Toor Dal 1kg",c:"Grocery",stock:40,vel:14,hrs:26,alt:"Moong Dal 1kg",p:165},
+{n:"Eggs (30 tray)",c:"Dairy",stock:60,vel:30,hrs:40,alt:"Eggs (12 pack)",p:195},
+{n:"Coriander bunch",c:"Produce",stock:10,vel:18,hrs:6,alt:"Mint bunch",p:15},
+{n:"Gel Pens 10-pack",c:"Stationery",stock:25,vel:4,hrs:24,alt:"Ball Pens 10-pack",p:70},
+{n:"Filter Coffee 250g",c:"Grocery",stock:30,vel:7,hrs:3,alt:"Instant Coffee 100g",p:210},
+{n:"Cough Syrup 100ml",c:"Pharmacy",stock:12,vel:5,hrs:60,alt:"Cough Lozenges",p:98}];
+let cart=new Set(),flags=new Set(),log=[],tab="d";
+const tabs={d:"1 · Diagnosis",s:"2 · Store Console",c:"3 · Customer App",i:"4 · Impact"};
+function nav(){$("#nav").innerHTML=Object.entries(tabs).map(([k,t])=>`<button class="${k==tab?"on":""}" onclick="tab='${k}';render()">${t}</button>`).join("")}
+function conf(){const w=items.reduce((a,i)=>a+i.vel,0);return 1-items.reduce((a,i)=>a+risk(i)*i.vel,0)/w}
+function render(){nav();$("#v").innerHTML={d:diag,s:store,c:cust,i:impact}[tab]();if(tab=="i")calc()}
+
+function diag(){return `
+<div class="card"><b>The diagnosis:</b> NOVA CART is growing volume but losing trust. Orders rose 23% in six months while repeat purchase fell 41% → 27%, and promo spend nearly doubled. The common root cause across customers, stores and support is <b>unreliable availability</b>: the app promises stock that stores can't confirm.</div>
+<div class="grid">
+<div class="card stat"><b>35%</b><span>of cancellations = product unavailable (the #1 reason; ≈1,480 orders/month)</span></div>
+<div class="card stat"><b>29%</b><span>of customers see "available" items vanish after ordering</span></div>
+<div class="card stat"><b>39%</b><span>of stores say online inventory takes too much effort; 18% may leave</span></div>
+<div class="card stat"><b>61%</b><span>of churned customers had rated us 4★+ — they didn't hate us; the experience just failed quietly</span></div>
+<div class="card stat"><b>72%</b><span>repeat probability after 3 orders — but only 31% make a 2nd order</span></div>
+<div class="card stat"><b>44%</b><span>of coupons never redeemed; discount-acquired users retain worse</span></div></div>
+<h2>Why this, not the other five priorities</h2>
+<div class="card">Delivery speed (Ops) is a battle against bigger rivals we can't win with ₹25L. Acquisition (Marketing) pours users into a leaky funnel. Availability is the one problem that hits all three: it drives cancellations, support tickets (refunds + missing items = 48% of tickets), store frustration, and the 2nd-order drop. And it's NOVA CART's chance to differentiate: trustworthy long-tail local inventory big platforms don't carry.</div>
+<div class="note">Product: <b>Stock Trust</b>: a per-item confidence score (from time since last update × sales velocity), a 10-second "confirm stock" console for stores, and availability-aware ordering for customers. No warehouses, no hires, no new hardware.</div>
+<p class="mut">Next: try the Store Console, then the Customer App, then model the impact.</p>`}
+
+function store(){
+const sorted=[...items].sort((a,b)=>risk(b)-risk(a));
+return `<h2>Store Console · Sharma General &amp; Pharmacy</h2>
+<p class="sub">Instead of editing a full catalogue, the store confirms only the items most likely to be wrong, riskiest first.</p>
+<div class="grid"><div class="card stat"><b>${Math.round(conf()*100)}%</b><span>Catalogue availability confidence (velocity-weighted)</span></div>
+<div class="card stat"><b>${items.filter(i=>risk(i)>=.5).length}</b><span>Items needing confirmation now</span></div></div>
+<div style="display:flex;gap:8px;margin:8px 0;flex-wrap:wrap"><button class="b" onclick="adv(6)">⏩ Simulate +6 hours</button><button class="b p" onclick="confirmTop()">✓ Confirm top 3 still in stock</button></div>
+<div class="card">${sorted.map(i=>{const r=risk(i),[k,t]=tier(r),ix=items.indexOf(i);return `<div class="row"><div class="grow"><b>${i.n}</b> ${flags.has(ix)?'<span class="pill hi">Customer waiting</span>':""}<div class="mut">${i.c} · updated ${i.hrs}h ago · ~${i.vel}/day · last count ${i.stock}</div></div>
+<div style="width:110px"><span class="pill ${k}">${t}</span><div class="bar"><i style="width:${r*100}%;background:var(--${k=="ok"?"acc":k=="mid"?"warn":"bad"})"></i></div></div>
+<button class="b" onclick="setS(${ix},true)">In stock</button><button class="b" onclick="setS(${ix},false)">Out</button></div>`}).join("")}</div>
+${log.length?`<div class="mut">${log.slice(-4).reverse().join("<br>")}</div>`:""}`}
+function adv(h){items.forEach(i=>i.hrs+=h);render()}
+function setS(ix,inStock){const i=items[ix];i.hrs=0;if(!inStock)i.stock=0;else if(i.stock<5)i.stock=20;flags.delete(ix);log.push(`${new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})} · ${i.n} marked ${inStock?"in stock":"OUT"} (1 tap)`);render()}
+function confirmTop(){[...items].sort((a,b)=>risk(b)-risk(a)).slice(0,3).forEach(i=>{if(i.stock>0){i.hrs=0;flags.delete(items.indexOf(i))}});log.push("Top-3 riskiest items confirmed in one tap");render()}
+
+function cust(){
+const sel=[...cart].map(ix=>items[ix]);
+const p=sel.reduce((a,i)=>a*(i.stock?1-risk(i):0),1);
+const bad=sel.filter(i=>!i.stock||risk(i)>=.5);
+return `<h2>Customer App · Sharma General &amp; Pharmacy</h2><p class="sub">Customers see honest availability before they pay, not after.</p>
+<div class="card">${items.map((i,ix)=>{const out=!i.stock,r=risk(i),[k,t]=out?["hi","Out of stock"]:tier(r);return `<div class="row"><div class="grow"><b>${i.n}</b> <span class="mut">₹${i.p}</span><div><span class="pill ${k}">${t}</span></div></div>
+<button class="b ${cart.has(ix)?"p":""}" ${out?"disabled":""} onclick="cart.has(${ix})?cart.delete(${ix}):cart.add(${ix});render()">${cart.has(ix)?"✓ Added":"Add"}</button></div>`}).join("")}</div>
+<div class="card"><b>Your basket</b> (${sel.length} items, ₹${sel.reduce((a,i)=>a+i.p,0)})
+${sel.length?`<div class="big">${Math.round(p*100)}% <span class="mut" style="font-size:14px;font-family:system-ui">chance every item can be fulfilled</span></div>
+${bad.map(i=>`<div class="note">${i.n} is ${i.stock?"unconfirmed":"out"}. Swap to <b>${i.alt}</b>, or let us confirm with the store first.</div>`).join("")}
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="b p" onclick="place()">Place order${bad.length?" &amp; verify risky items":""}</button>${bad.length?`<button class="b" onclick="swap()">Swap risky items</button>`:""}</div>`:'<div class="mut">Add items to see order-success odds.</div>'}</div>`}
+function swap(){[...cart].forEach(ix=>{if(!items[ix].stock||risk(items[ix])>=.5){cart.delete(ix);const a=items[ix].alt;items.push({n:a,c:items[ix].c,stock:40,vel:6,hrs:2,alt:items[ix].n,p:items[ix].p});cart.add(items.length-1)}});render()}
+function place(){[...cart].forEach(ix=>{if(risk(items[ix])>=.5)flags.add(ix)});log.push("Order placed: store pinged to verify risky items before packing");cart.clear();tab="s";render()}
+
+function impact(){
+const S=(id,l,min,max,v,st)=>`<div class="sl"><label>${l}<b id="o${id}"></b></label><input type="range" id="${id}" min="${min}" max="${max}" value="${v}" step="${st||1}" oninput="calc()"></div>`;
+return `<h2>Business Impact Model</h2><p class="sub">Baseline from the case; adjust the levers. Revenue/order = ₹26.1L ÷ 38,500 = ₹678.</p>
+<div class="card">${S("a","Cut in 'unavailable' cancellations",0,90,55)}${S("b","Repeat-rate lift (percentage points, from 27%)",0,12,3)}${S("c","Support tickets avoided (missing/incorrect items)",0,60,25)}${S("d","Acquisition budget shifted to 2nd/3rd-order nudges",0,60,30)}${S("e","Build cost (₹ lakh, cap 25)",10,25,22)}</div>
+<div class="grid" id="out"></div>
+<div class="note">Assumptions: ₹60 per support ticket; 1 extra order per newly retained MAU/month; only 50% of shifted acquisition spend is treated as saved. These are scenario inputs. Validate with a 4-week pilot in one city (stores split into test and control).</div>
+<div class="card"><b>Pilot success metrics:</b> unavailable-cancellation rate (4.0% → under 1.8%), 2nd-order within 30 days (31% → 40%), refund/missing-item tickets, store churn intent (18% → under 10%).</div>`}
+function calc(){const v=id=>+$("#"+id).value;
+const rec=38500*.11*.35*v("a")/100,rep=46000*v("b")/100,tk=5900*.28*v("c")/100,promo=17e5*.58*v("d")/100*.5;
+const m=(rec+rep)*678,sav=tk*60+promo,tot=m+sav,cost=v("e")*1e5;
+$("#oa").textContent=v("a")+"%";$("#ob").textContent="+"+v("b")+" pp";$("#oc").textContent=v("c")+"%";$("#od").textContent=v("d")+"%";$("#oe").textContent="₹"+v("e")+"L";
+const c=(b,s)=>`<div class="card stat"><b>${b}</b><span>${s}</span></div>`;
+$("#out").innerHTML=c(Math.round(rec).toLocaleString("en-IN"),"orders recovered / month")+c(Math.round(rep).toLocaleString("en-IN"),"extra repeat orders / month")+c(L(m),"added revenue / month")+c(L(sav),"cost savings / month (support + promo)")+c(L(tot),"total monthly benefit")+c(tot>0?(cost/tot).toFixed(1)+" mo":"–","payback on ₹"+v("e")+"L build")+c(L(tot*6-cost),"net gain over 6 months (before ramp-up)");}
+render();
+</script></body></html>
